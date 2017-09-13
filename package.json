@@ -1,0 +1,22 @@
+{
+  "name": "bitcoin-propagator",
+  "version": "0.0.0",
+  "description": "Bitcoin transaction propagator and blockchain access",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "bitcoin",
+    "blockchain",
+    "transaction"
+  ],
+  "author": "Mateus Pires <mateusplpl@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "bitcore-lib": "^0.14.0",
+    "bluebird": "^3.5.0",
+    "request": "^2.81.0",
+    "request-promise": "^4.2.1"
+  }
+}
