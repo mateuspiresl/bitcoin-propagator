@@ -14,7 +14,7 @@ class Node {
 
     /**
      * Returns the unspent transactions.
-     * @param {bitcore.Address} address The address.
+     * @param {string} address The address.
      * @return Returns a {@link Promise} that, if resolved, gives the data.
      */
     getUnspent (address) {
@@ -23,7 +23,7 @@ class Node {
 
     /**
      * Broadcasts a signed transaction.
-     * @param {bitcore.Transaction} transaction Signed transaction object or serialized signed transaction.
+     * @param {string} transaction Serialized signed transaction.
      * @return Returns a {@link Promise} that, if resolved, gives the transaction ID.
      */
     broadcast (transaction) {

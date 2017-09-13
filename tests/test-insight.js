@@ -3,9 +3,9 @@ const data      = require('./data');
 const Insight   = require('../').nodes.Insight;
 
 
-const insight = new Insight(bitcore.Networks.testnet);
-const privateKey = new bitcore.PrivateKey(data.privateKey);
-const address = privateKey.toAddress();
+const insight = new Insight('testnet');
+const privateKey = data.privateKey;
+const address = data.address;
 const minerFee = bitcore.Unit.fromMilis(0.128).toSatoshis();
 
 var unspent = null;
@@ -14,7 +14,7 @@ var transactionId = null;
 console.log('\ngetUnspent with wrong address')
 insight.getUnspent('mfbb6ohg1SRnfDKGnS2AjVX2xEALfLHWs0')
     .then(data =>  {
-        console.error('\t\tError, got output', data);
+        console.error('\t\tError, expected output', data);
         onError();
     })
     .catch(error => {
@@ -26,50 +26,11 @@ insight.getUnspent('mfbb6ohg1SRnfDKGnS2AjVX2xEALfLHWs0')
 
 
     .catch(error => {
-        console.error('\t\tError, unexpected', error);
+        console.error('\t\tError, unexpected error', error);
         onError();
     })
-    .then(data => {
-        console.log('\t\tSuccess, output as expect', data);
-        unspent = data;
-
-        console.log('\nbroadcast with empty unspent');
-        return insight.broadcast(
-            new bitcore.Transaction()
-                .from([])
-                .addData('0')
-                .change(address)
-                .fee(minerFee)
-                .sign(privateKey)
-        );
-    })
-
-
-    .then(data => {
-        console.error('\t\tError, got output', data);
-        onError();
-    })
-    .catch(error => {
-        console.log('\t\tSuccess, error as expected', error);
-
-        console.log('\nbroadcast with invalid data');
-        return insight.broadcast(
-            new bitcore.Transaction()
-                .from(unspent)
-                .addData(new Array(82).join('0'))
-                .change(address)
-                .fee(minerFee)
-                .sign(privateKey)
-        );
-    })
-
-
-    .then(data => {
-        console.error('\t\tError, got output', data);
-        onError();
-    })
-    .catch(error => {
-        console.log('\t\tSuccess, error as expected', error);
+    .then(unspent => {
+        console.log('\t\tSuccess, expected output', data);
 
         console.log('\nbroadcast with valid data');
         return insight.broadcast(
@@ -79,16 +40,18 @@ insight.getUnspent('mfbb6ohg1SRnfDKGnS2AjVX2xEALfLHWs0')
                 .change(address)
                 .fee(minerFee)
                 .sign(privateKey)
+                .serialize()
+                .toString()
         );
     })
 
 
     .catch(error => {
-        console.error('\t\tError, unexpected', error);
+        console.error('\t\tError, unexpected error', error);
         onError();
     })
     .then(data => {
-        console.log('\t\tSuccess, output as expect', data);
+        console.log('\t\tSuccess, expected output', data);
         transactionId = data;
 
         console.log('\nverify with invalid transaction ID');
@@ -97,11 +60,11 @@ insight.getUnspent('mfbb6ohg1SRnfDKGnS2AjVX2xEALfLHWs0')
 
 
     .then(data => {
-        console.error('\t\tError, got output', data);
+        console.error('\t\tError, expected output', data);
         onError();
     })
     .catch(error => {
-        console.log('\t\tSuccess, error as expected', error);
+        console.log('\t\tSuccess, unexpected error', error);
 
         console.log('\nverify with valid transaction ID');
         return insight.getTransaction(transactionId);
@@ -114,7 +77,7 @@ insight.getUnspent('mfbb6ohg1SRnfDKGnS2AjVX2xEALfLHWs0')
     })
     .then(data => {
         if (data.data === 'test')
-            console.log('\t\tSuccess, output as expect', data);
+            console.log('\t\tSuccess, expected output', data);
         else
             throw console.error('\t\tWrogn data', data);
     })

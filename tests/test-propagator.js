@@ -1,4 +1,3 @@
-const bitcore       = require('bitcore-lib');
 const data          = require('./data');
 const Propagator    = require('../src/propagator');
 const Node          = require('../src/node');
@@ -14,9 +13,9 @@ class TestNode extends Node {
 }
 
 
-const network = bitcore.Networks.testnet;
-const privateKey = new bitcore.PrivateKey(data.privateKey);
-const address = privateKey.toAddress();
+const network = 'testnet';
+const privateKey = data.privateKey;
+const address = data.address;
 
 let propagator = new Propagator(
     network,

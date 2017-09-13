@@ -1,5 +1,4 @@
 const request   = require('request-promise');
-const bitcore   = require('bitcore-lib');
 const Node      = require('../node');
 const Error     = require('../error');
 
@@ -16,10 +15,10 @@ class Insight extends Node {
     constructor (network) {
         super();
 
-        if (network === bitcore.Networks.livenet)
+        if (network === 'mainnet' || network === 'livenet')
             this.address = 'https://insight.bitpay.com/api';
         
-        else if (!network || network === bitcore.Networks.testnet)
+        else if (!network || network === 'testnet')
             this.address = 'https://test-insight.bitpay.com/api';
 
         else throw new Error('UnknownNetworkError', 'Unknown network');
@@ -27,13 +26,13 @@ class Insight extends Node {
 
     /**
      * Returns the unspent transactions.
-     * @param {bitcore.Address} address The address.
+     * @param {string} address The address.
      * @return Returns a {@link Promise} that, if resolved, gives the data.
      */
     getUnspent (address)
     {
         const url = this.address + '/addrs/utxo';
-        const data = { addrs: address.toString() };
+        const data = { addrs: address };
     
         return request.post({ url: url, json: data, timeout: timeout })
             .catch(onError('InvalidAddressError'));
@@ -41,23 +40,17 @@ class Insight extends Node {
 
     /**
      * Broadcasts a signed transaction.
-     * @param {bitcore.Transaction} transaction Signed transaction object or serialized signed transaction.
+     * @param {string} transaction Serialized signed transaction.
      * @return Returns a {@link Promise} that, if resolved, gives the transaction ID.
      */
     broadcast (transaction)
     {
         const url = this.address + '/tx/send';
-        
-        try {
-            const data = { rawtx: transaction.serialize().toString() };
+        const data = { rawtx: transaction };
 
-            return request.post({ url: url, json: data, timeout: timeout })
-                .then(data => data.txid)
-                .catch(onError('TransactionBroadcastError'));
-        }
-        catch (error) {
-            return Promise.reject(new Error('TransactionSerializeError', error.message));
-        }
+        return request.post({ url: url, json: data, timeout: timeout })
+            .then(data => data.txid)
+            .catch(onError('TransactionBroadcastError'));
     }
 
     /**

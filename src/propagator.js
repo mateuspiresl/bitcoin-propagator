@@ -11,7 +11,7 @@ const Error     = require('./error');
 class Propagator extends Node {
     /**
      * Propagator contructor.
-     * @param {bitcoin.Network} network The network to connect. 
+     * @param {string} network The network to connect. 
      */
     constructor (network, nodes) {
         super();
@@ -28,7 +28,7 @@ class Propagator extends Node {
     
     /**
      * Returns the unspent transactions from the first node that is up.
-     * @param {bitcore.Address} address The address.
+     * @param {string} address The address.
      * @return Returns a {@link Promise} that, if resolved, gives the data.
      */
     getUnspent (address) {
@@ -37,7 +37,7 @@ class Propagator extends Node {
 
     /**
      * Broadcasts a signed transaction from the first node that is up.
-     * @param {bitcore.Transaction} transaction Signed transaction object or serialized signed transaction.
+     * @param {string} transaction Serialized signed transaction.
      * @return Returns a {@link Promise} that, if resolved, gives the transaction ID.
      */
     broadcast (transaction) {
