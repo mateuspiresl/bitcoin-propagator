@@ -1,6 +1,6 @@
 const bitcore   = require('bitcore-lib');
 const data      = require('./data');
-const Insight   = require('../').nodes.Insight;
+const Insight   = require('../').Propagator.Insight;
 
 
 const insight = new Insight('testnet');
@@ -13,24 +13,18 @@ var transactionId = null;
 
 console.log('\ngetUnspent with wrong address')
 insight.getUnspent('mfbb6ohg1SRnfDKGnS2AjVX2xEALfLHWs0')
-    .then(data =>  {
-        console.error('\t\tError, expected output', data);
-        onError();
-    })
+    .then(data => onError('output', data))
     .catch(error => {
-        console.log('\t\tSuccess, error as expected', error);
+        console.log('\tSuccess, error as expected', error.name + ' ' + error.message);
         
         console.log('\ngetUnspent with correct address');
         return insight.getUnspent(address)
     })
 
 
-    .catch(error => {
-        console.error('\t\tError, unexpected error', error);
-        onError();
-    })
+    .catch(error => onError('error', error.name + ' ' + error.message))
     .then(unspent => {
-        console.log('\t\tSuccess, expected output', data);
+        console.log('\tSuccess, expected output', unspent);
 
         console.log('\nbroadcast with valid data');
         return insight.broadcast(
@@ -46,12 +40,9 @@ insight.getUnspent('mfbb6ohg1SRnfDKGnS2AjVX2xEALfLHWs0')
     })
 
 
-    .catch(error => {
-        console.error('\t\tError, unexpected error', error);
-        onError();
-    })
+    .catch(error => onError('error', error.name + ' ' + error.message))
     .then(data => {
-        console.log('\t\tSuccess, expected output', data);
+        console.log('\tSuccess, expected output', data);
         transactionId = data;
 
         console.log('\nverify with invalid transaction ID');
@@ -59,36 +50,30 @@ insight.getUnspent('mfbb6ohg1SRnfDKGnS2AjVX2xEALfLHWs0')
     })
 
 
-    .then(data => {
-        console.error('\t\tError, expected output', data);
-        onError();
-    })
+    .then(data => onError('output', data))
     .catch(error => {
-        console.log('\t\tSuccess, unexpected error', error);
+        console.log('\tSuccess, expected error', error.name + ' ' + error.message);
 
         console.log('\nverify with valid transaction ID');
         return insight.getTransaction(transactionId);
     })
     
     
-    .catch(error => {
-        console.error('\t\tError, unexpected', error);
-        onError();
-    })
+    .catch(error => onError('error', error.name + ' ' + error.message))
     .then(data => {
         if (data.data === 'test')
-            console.log('\t\tSuccess, expected output', data);
+            console.log('\tSuccess, expected output', data);
         else
-            throw console.error('\t\tWrogn data', data);
+            onError('output', data);
     })
 
 
-    .catch(onError)
     .then(() => console.log('\nSuccess!'));
 
 
-function onError()
+function onError(unexpected, message)
 {
+    console.error('\tError, unexpected', unexpected, message);
     console.error('\nError!');
     process.exit(1);
 }
