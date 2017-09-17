@@ -1,14 +1,22 @@
-const data          = require('./data');
-const Propagator    = require('../src/propagator');
-const Node          = require('../src/node');
-const Insight       = require('../src/nodes/insight');
+const data                  = require('./data');
+const { Propagator, Node }  = require('../');
 
+
+class InvalidNode { }
+
+class ErrorNode extends Node {
+    constructor () { super(); }
+
+    getUnspent (address) {
+        return Promise.reject({ name: 'RequestError' });
+    }
+}
 
 class TestNode extends Node {
     constructor () { super(); }
 
     getUnspent (address) {
-        return Promise.reject({ name: 'RequestError' });
+        return Promise.resolve([ 'unspent' ]);
     }
 }
 
@@ -17,50 +25,57 @@ const network = 'testnet';
 const privateKey = data.privateKey;
 const address = data.address;
 
-let propagator = new Propagator(
-    network,
-    [ new TestNode() ]
-);
+var propagator;
 
-console.log('\npropagating through the test node')
-propagator.getUnspent(address)
-    .then(data => {
-        console.error('\t\tError, unexpect output', data);
-        onError();
+Promise.resolve()
+    .then(() => {
+        console.log('\npropagating through an invalid node')
+        new Propagator([ new InvalidNode() ]);
     })
+
+
+    .then(data => onError('output', data))
     .catch(error => {
-        console.log('\t\tSuccess, expected error', error);
-        
-        propagator = new Propagator(
-            network,
-            [ new TestNode(), new Insight(network) ]
-        );
+        console.log('\tSuccess, expected error', error.name + ' ' + error.message);
+
+        propagator = new Propagator([ new ErrorNode() ]);
+
+        console.log('\npropagating through the error node')
+        return propagator.getUnspent(address);
+    })
+
+
+    .then(data => onError('output', data))
+    .catch(error => {
+        console.log('\tSuccess, expected error', error.name + ' ' + error.message);
+
+        propagator = new Propagator([ new ErrorNode(), new TestNode() ]);
 
         console.log('\npropagating through a valid node');
         return propagator.getUnspent(address);
     })
 
-    .catch(error => {
-        console.error('\t\tError, unexpected error', error);
-        onError();
-    })
+
+    .catch(error => onError('error', error.name + ' ' + error.message))
     .then(data => {
-        console.log('\t\tSuccess, expected ouput', data);
+        console.log('\tSuccess, expected ouput', data);
 
-        if (propagator.nodes[0] instanceof Insight)
-            console.log('\nThe nodes were successfuly reordered');
-        else
-        {
-            console.error('\nError: The nodes were not reordered');
-            onError();
-        }
+        console.log('\nexpect reordering');
+        if (!(propagator.nodes[0] instanceof TestNode))
+            throw TypeError('The node does not extend TestNode');
     })
 
-    .then(() => console.log('\nSuccess!'));
+
+    .catch(error => onError('error', error.name + ' ' + error.message))
+    .then(() => {
+        console.log('\tSuccess, the nodes were reordered');
+        console.log('\nSuccess!');
+    });
 
 
-function onError()
+function onError(unexpected, message)
 {
+    console.error('\t\tError, unexpected', unexpected, message);
     console.error('\nError!');
     process.exit(1);
 }

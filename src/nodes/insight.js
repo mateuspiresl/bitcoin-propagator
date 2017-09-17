@@ -18,10 +18,10 @@ class Insight extends Node {
         if (network === 'mainnet' || network === 'livenet')
             this.address = 'https://insight.bitpay.com/api';
         
-        else if (!network || network === 'testnet')
+        else if (network === 'testnet')
             this.address = 'https://test-insight.bitpay.com/api';
 
-        else throw new Error('UnknownNetworkError', 'Unknown network');
+        else throw new UnknownNetworkError('Unknown network ' + network);
     }
 
     /**
@@ -35,7 +35,7 @@ class Insight extends Node {
         const data = { addrs: address };
     
         return request.post({ url: url, json: data, timeout: timeout })
-            .catch(onError('InvalidAddressError'));
+            .catch(onError(InvalidAddressError));
     }
 
     /**
@@ -50,7 +50,7 @@ class Insight extends Node {
 
         return request.post({ url: url, json: data, timeout: timeout })
             .then(data => data.txid)
-            .catch(onError('TransactionBroadcastError'));
+            .catch(onError(TransactionBroadcastError));
     }
 
     /**
@@ -73,9 +73,9 @@ class Insight extends Node {
             })
             .catch(error => {
                 if (error.name === 'StatusCodeError')
-                    throw new Error('TransactionNotFoundError', 'The transaction with ID \'' + transactionId + '\' wasn\'t found');
+                    throw new TransactionNotFoundError('The transaction with ID \'' + transactionId + '\' wasn\'t found');
                 else
-                    onError('InvalidAddressError')(error);
+                    onError(InvalidTransactionError)(error);
             });
     }
 }
@@ -83,13 +83,13 @@ class Insight extends Node {
 
 // Private functions
 
-function onError(type)
+function onError(errorClass)
 {
     return error => {
         if (error.name === 'RequestError')
-            throw new Error(error.name, error.message);
+            throw error;
         else
-            throw new Error(type, error.error);
+            throw new errorClass(error.error);
     }
 }
 
@@ -121,6 +121,15 @@ function getOpReturnData(opReturn)
 function getSize(hex, index) {
     return new Buffer(hex.substr(index, 2), 'hex').readInt8(0);
 }
+
+
+// Errors
+
+class UnknownNetworkError       extends Error { constructor(message) { super('UnknownNetworkError', message); this.name = 'UnknownNetworkError'; } }
+class InvalidAddressError       extends Error { constructor(message) { super('InvalidAddressError', message); } }
+class TransactionBroadcastError extends Error { constructor(message) { super('TransactionBroadcastError', message); } }
+class TransactionNotFoundError  extends Error { constructor(message) { super('TransactionNotFoundError', message); } }
+class InvalidTransactionError   extends Error { constructor(message) { super('InvalidTransactionError', message); } }
 
 
 module.exports = Insight;

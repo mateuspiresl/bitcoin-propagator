@@ -11,19 +11,24 @@ const Error     = require('./error');
 class Propagator extends Node {
     /**
      * Propagator contructor.
-     * @param {string} network The network to connect. 
+     * The first argument can be the network, testnet or mainnet (livenet too),
+     * or the list of nodes instances. Each node must extend the Node class.
+     * @param {string | Array} network The network to connect or an array of nodes.
      */
-    constructor (network, nodes) {
+    constructor (network) {
         super();
 
-        if (network !== undefined && network instanceof Array)
+        if (typeof network === 'string')
         {
-            nodes = network;
-            network = undefined;
+            this.nodes = [ new Insight(network) ];
         }
-        
-        const defaultNodes = [ new Insight(network) ];
-        this.nodes = nodes instanceof Array ? nodes : defaultNodes;
+        else if (network instanceof Array)
+        {
+            if (!network.every(node => node instanceof Node))
+                throw new TypeError('Every node must extend the class Node.');
+
+            this.nodes = network;
+        }
     }
     
     /**
@@ -78,8 +83,17 @@ function run (propagator, method, index)
                     throw error;
             });
     }
-    else return Promise.reject(new Error('ConnectionError', 'Could not connect to any propagator'));
+    else return Promise.reject(new ConnectionError('Could not connect to any propagator'));
 }
+
+
+// Errors
+
+class ConnectionError extends Error { constructor(message) { super('ConnectionError', message); } }
+
+
+Propagator.nodes = [ Insight ];
+Propagator.Insight = Insight;
 
 
 module.exports = Propagator;

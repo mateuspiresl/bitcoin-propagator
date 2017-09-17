@@ -1,6 +1,6 @@
 {
   "name": "bitcoin-propagator",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Bitcoin transaction propagator and blockchain access",
   "main": "index.js",
   "scripts": {
