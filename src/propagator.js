@@ -13,22 +13,42 @@ class Propagator extends Node {
      * Propagator contructor.
      * The first argument can be the network, testnet or mainnet (livenet too),
      * or the list of nodes instances. Each node must extend the Node class.
+     * The second argument, options, may have some attrbibutes:
+     *   - attempts: The number of request attempts on each node.
+     *   - timeout: The timeout for each request.
      * @param {string | Array} network The network to connect or an array of nodes.
+     * @param {object} options The options.
      */
-    constructor (network) {
+    constructor (network, options) {
         super();
 
         if (typeof network === 'string')
         {
-            this.nodes = [ new Insight(network) ];
+            this.nodes = [ new Insight(network, options.timeout) ];
         }
         else if (network instanceof Array)
         {
             if (!network.every(node => node instanceof Node))
-                throw new TypeError('Every node must extend the class Node.');
+                throw new TypeError('Every node must extend the class Node');
 
             this.nodes = network;
         }
+        else throw new TypeError('The network ' + network + ' is not valid');
+
+        if (options)
+        {
+            const attempts = options.attempts;
+
+            if (attempts)
+            {
+                if (typeof attempts === 'number' && attempts > 0)
+                    this.attempts = attempts;
+                else
+                    throw new TypeError('The number of attempts provided, ' + attempts + ', is not valid');
+            }
+        }
+
+        if (!this.attempts) this.attempts = 1;
     }
     
     /**
@@ -37,7 +57,7 @@ class Propagator extends Node {
      * @return Returns a {@link Promise} that, if resolved, gives the data.
      */
     getUnspent (address) {
-        return run(this, node => node.getUnspent(address));
+        return this.run(node => node.getUnspent(address));
     }
 
     /**
@@ -46,7 +66,7 @@ class Propagator extends Node {
      * @return Returns a {@link Promise} that, if resolved, gives the transaction ID.
      */
     broadcast (transaction) {
-        return run(this, node => node.broadcast(transaction));
+        return this.run(node => node.broadcast(transaction));
     }
 
     /**
@@ -55,35 +75,37 @@ class Propagator extends Node {
      * @return Returns a {@link Promise} that, if resolved, gives the data.
      */
     getTransaction (transactionId) {
-        return run(this, node => node.getTransaction(transactionId));
+        return this.run(node => node.getTransaction(transactionId));
     }
-}
 
-
-// Private methods
-
-function run (propagator, method, index)
-{
-    if (index === undefined) index = 0;
-
-    if (index < propagator.nodes.length)
+    /**
+     * TODO
+     */
+    run (method, index)
     {
-        return method(propagator.nodes[index])
-            .then(result => {
-                // Moves unworking nodes to the end of the nodes list,
-                // this avoids using them first and the consequently delay
-                while (index-- > 0) propagator.nodes.push(propagator.nodes.splice(0, 1));
-                return result;
-            })
-            .catch(error => {
-                // On connection error, try the next
-                if (error.name === 'RequestError')
-                    return run(propagator, method, index + 1);
-                else
-                    throw error;
-            });
+        if (index === undefined) index = 0;
+
+        if (index < this.nodes.length * this.attempts)
+        {
+            let normalizedIndex = index % this.nodes.length;
+    
+            return method(this.nodes[normalizedIndex])
+                .then(result => {
+                    // Moves unworking nodes to the end of the nodes list,
+                    // this avoids using them first and the consequently delay
+                    while (normalizedIndex-- > 0) this.nodes.push(this.nodes.splice(0, 1));
+                    return result;
+                })
+                .catch(error => {
+                    // On connection error, try the next
+                    if (error.name === 'RequestError')
+                        return this.run(method, index + 1);
+                    else
+                        throw error;
+                });
+        }
+        else return Promise.reject(new ConnectionError('Could not connect to any propagator'));
     }
-    else return Promise.reject(new ConnectionError('Could not connect to any propagator'));
 }
 
 

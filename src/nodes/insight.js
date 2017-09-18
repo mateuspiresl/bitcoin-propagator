@@ -12,8 +12,10 @@ class Insight extends Node {
     /**
      * Constructor.
      */
-    constructor (network) {
+    constructor (network, timeout) {
         super();
+
+        this.timeout = timeout ? timeout : 30000;
 
         if (network === 'mainnet' || network === 'livenet')
             this.address = 'https://insight.bitpay.com/api';
@@ -34,7 +36,7 @@ class Insight extends Node {
         const url = this.address + '/addrs/utxo';
         const data = { addrs: address };
     
-        return request.post({ url: url, json: data, timeout: timeout })
+        return request.post({ url: url, json: data, timeout: this.timeout })
             .catch(onError(InvalidAddressError));
     }
 
@@ -48,7 +50,7 @@ class Insight extends Node {
         const url = this.address + '/tx/send';
         const data = { rawtx: transaction };
 
-        return request.post({ url: url, json: data, timeout: timeout })
+        return request.post({ url: url, json: data, timeout: this.timeout })
             .then(data => data.txid)
             .catch(onError(TransactionBroadcastError));
     }
@@ -62,7 +64,7 @@ class Insight extends Node {
     {
         const url = this.address + '/tx/' + transactionId;
     
-        return request.get({ url: url, timeout: timeout })
+        return request.get({ url: url, timeout: this.timeout })
             .then(JSON.parse)
             .then(data => {
                 return {

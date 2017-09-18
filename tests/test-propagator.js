@@ -5,9 +5,13 @@ const { Propagator, Node }  = require('../');
 class InvalidNode { }
 
 class ErrorNode extends Node {
-    constructor () { super(); }
+    constructor () {
+        super();
+        this.count = 0;
+    }
 
     getUnspent (address) {
+        this.count++;
         return Promise.reject({ name: 'RequestError' });
     }
 }
@@ -31,14 +35,15 @@ Promise.resolve()
     .then(() => {
         console.log('\npropagating through an invalid node')
         new Propagator([ new InvalidNode() ]);
+        return 'Created propagator with invalid node';
     })
 
 
     .then(data => onError('output', data))
     .catch(error => {
         console.log('\tSuccess, expected error', error.name + ' ' + error.message);
-
-        propagator = new Propagator([ new ErrorNode() ]);
+        
+        propagator = new Propagator([ new ErrorNode() ], { attempts: 2 });
 
         console.log('\npropagating through the error node')
         return propagator.getUnspent(address);
@@ -48,6 +53,10 @@ Promise.resolve()
     .then(data => onError('output', data))
     .catch(error => {
         console.log('\tSuccess, expected error', error.name + ' ' + error.message);
+
+        if (propagator.nodes[0].count !== 2)
+            onError('counting', 'The number of attemps on the node wasn\'t the number '
+                + 'of attemps given to the constructor');
 
         propagator = new Propagator([ new ErrorNode(), new TestNode() ]);
 
@@ -75,7 +84,7 @@ Promise.resolve()
 
 function onError(unexpected, message)
 {
-    console.error('\t\tError, unexpected', unexpected, message);
+    console.error('\tError, unexpected', unexpected, message);
     console.error('\nError!');
     process.exit(1);
 }
