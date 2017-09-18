@@ -22,9 +22,26 @@ class Propagator extends Node {
     constructor (network, options) {
         super();
 
+        let timeout = undefined;
+
+        if (options)
+        {
+            if (options.attempts)
+            {
+                if (typeof options.attempts === 'number' && options.attempts > 0)
+                    this.attempts = options.attempts;
+                else
+                    throw new TypeError('The number of attempts provided, ' + options.attempts + ', is not valid');
+            }
+
+            if (options.timeout) timeout = options.timeout;
+        }
+
+        if (!this.attempts) this.attempts = 1;
+
         if (typeof network === 'string')
         {
-            this.nodes = [ new Insight(network, options.timeout) ];
+            this.nodes = [ new Insight(network, timeout) ];
         }
         else if (network instanceof Array)
         {
@@ -34,21 +51,6 @@ class Propagator extends Node {
             this.nodes = network;
         }
         else throw new TypeError('The network ' + network + ' is not valid');
-
-        if (options)
-        {
-            const attempts = options.attempts;
-
-            if (attempts)
-            {
-                if (typeof attempts === 'number' && attempts > 0)
-                    this.attempts = attempts;
-                else
-                    throw new TypeError('The number of attempts provided, ' + attempts + ', is not valid');
-            }
-        }
-
-        if (!this.attempts) this.attempts = 1;
     }
     
     /**
