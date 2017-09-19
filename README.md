@@ -18,9 +18,12 @@ rejected if any are.
 
 The Propagator has support for bitcoin testnet and mainnet.
 
+- `testnet`
+- `mainnet` or `livenet`
+
 ## Instantiating
 
-The network must be given to the Propagator constructor.
+The Propagator constructor requires the network.
 
 ```js
 const Propagator = require('bitcoin-propagator');
@@ -28,9 +31,16 @@ const propagator = new Propagator('testnet');
 ```
 
 There are two options, `timeout` and `attempts`.
-- `timeout` refers to the request timeout.
+- `timeout` refers to the request timeout (in millis).
 - `ettempts` refers to the number of attempts a method will try when
 it receives erros from all the APIS.
+
+#### Example
+
+```js
+const options = { attemps: 2, timeout: 3000 };
+const propagator = new Propagator('testnet', options);
+```
 
 ## Methods
 
@@ -84,18 +94,10 @@ propagator.getTransaction(transactionId)
 ```
 
 The return value has 3 attributes:
-- **data**: The data stored in the OP_RETURN.
-- **time**: The time of the transaction.
-- **confirmations**: The number of confirmations the block has 
+- `data` (`string`): The data stored in the OP_RETURN.
+- `time` (`Date`): The time of the transaction.
+- `confirmations` (`int`): The number of confirmations the block has 
 received.
-
-```js
-{
-  data: <string>,
-  time: <Date>,
-  confirmations: <int>
-}
-```
 
 ## Example
 
@@ -107,6 +109,7 @@ const address = ... // A valid address
 
 // Get the unspent transactions from the address
 propagator.getUnspent(address)
+
   // Received an array of unspent transactions
   .then(unspent => {
     // Create a transaction with the unspent transactions data
@@ -114,15 +117,18 @@ propagator.getUnspent(address)
     // Broadcast the serialized transaction
     return propagator.broadcast(transaction);
   })
+  
   // Received the transaction ID
   .then(transactionId => {
     // Get the transaction data with the transactionId
     return propagator.getTransaction(transactionId);
   })
+  
   // Received the transaction data
   .then(data => {
     // Do something with the transaction data
   })
+  
   // Received error
   .catch(error => {
     // Handle error
