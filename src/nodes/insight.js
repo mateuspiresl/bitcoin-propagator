@@ -69,7 +69,7 @@ class Insight extends Node {
             .then(data => {
                 return {
                     data: getOpReturnData(data.vout[0].scriptPubKey.hex),
-                    time: new Date(data.time * 1000),
+                    time: data.time * 1000,
                     confirmations: data.confirmations
                 };
             })
